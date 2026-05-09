@@ -42,11 +42,11 @@ if st.sidebar.button("💾 Guardar en Google Sheets"):
         'Moneda': moneda
     }])
     
-    # Combinar con datos viejos y guardar
+ # Combinar con datos viejos y guardar
     df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
-    conn.update(data=df_actualizado)
+   url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+    conn.update(spreadsheet=url, data=df_actualizado)
     st.sidebar.success("¡Guardado correctamente!")
-    st.rerun()
 
 # --- CUERPO PRINCIPAL ---
 tab1, tab2, tab3 = st.tabs(["💰 Ahorros", "📉 Gastos", "💸 Deudas"])
