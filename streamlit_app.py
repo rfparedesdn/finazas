@@ -4,30 +4,31 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
-# Configuración de la página
 st.set_page_config(page_title="Gastos Rafael", layout="wide")
 
 st.title("💰 Mi Control de Finanzas")
 
-# 1. CONEXIÓN DIRECTA CON LA LLAVE JSON
-# Usa el nombre que pusiste en los Secrets: [connections.gsheets]
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# URL de tu Excel (aseguráte que sea esta o cámbiala por la tuya)
-URL_EXCEL = "https://docs.google.com/spreadsheets/d/1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs/edit?usp=sharing"
-
-# 2. LEER DATOS ACTUALES
+# 1. INTENTO DE CONEXIÓN
 try:
-    # ttl=0 para que siempre traiga lo último y no use memoria vieja
-    df = conn.read(spreadsheet=URL_EXCEL, ttl=0)
+    conn = st.connection("gsheets", type=GSheetsConnection)
     
-    # Limpieza: Si el Excel tiene filas vacías, las quitamos
+    # URL de tu Excel
+    URL_EXCEL = "https://docs.google.com/spreadsheets/d/1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs/edit?usp=sharing"
+
+    # Intentar leer
+    df = conn.read(spreadsheet=URL_EXCEL, ttl=0)
     df = df.dropna(how='all')
+    st.success("✅ ¡Conexión exitosa con el Excel!")
+
 except Exception as e:
-    st.error("No se pudo conectar con el Excel. Revisá si compartiste el archivo con el correo del bot.")
+    st.error("❌ Error de Conexión")
+    with st.expander("Ver detalle técnico del error"):
+        st.write(e)
+    
+    st.info("💡 Si ya compartiste el archivo, revisá que en 'Secrets' de Streamlit hayas pegado la llave JSON correctamente.")
     df = pd.DataFrame(columns=['Fecha', 'Tipo', 'Detalle', 'Monto', 'Moneda'])
 
-# 3. INTERFAZ DE USUARIO (Dos columnas)
+# --- RESTO DE LA INTERFAZ ---
 col_form, col_graf = st.columns([1, 2])
 
 with col_form:
@@ -41,7 +42,6 @@ with col_form:
         
         if st.button("🚀 GUARDAR AHORA", use_container_width=True):
             if detalle and monto > 0:
-                # Crear la nueva fila
                 nueva_fila = pd.DataFrame([{
                     'Fecha': fecha.strftime('%d/%m/%Y'),
                     'Tipo': tipo,
@@ -50,34 +50,23 @@ with col_form:
                     'Moneda': moneda
                 }])
                 
-                # Combinar con los datos existentes
                 df_actualizado = pd.concat([df, nueva_fila], ignore_index=True)
                 
-                # GUARDAR DIRECTO EN GOOGLE SHEETS
                 try:
                     conn.update(spreadsheet=URL_EXCEL, data=df_actualizado)
                     st.success("¡Guardado correctamente!")
                     st.balloons()
-                    st.rerun() # Esto refresca la app para ver el cambio
-                except Exception as e:
-                    st.error(f"Error al guardar: {e}")
+                    st.rerun()
+                except Exception as ex:
+                    st.error(f"No se pudo guardar: {ex}")
             else:
-                st.warning("Por favor, completa el detalle y el monto.")
+                st.warning("Completa los datos.")
 
 with col_graf:
-    st.subheader("📊 Resumen de Gastos")
+    st.subheader("📊 Resumen")
     if not df.empty:
-        # Gráfico circular
-        fig = px.pie(df, values='Monto', names='Tipo', hole=0.4, 
-                     color_discrete_sequence=px.colors.qualitative.Pastel)
+        fig = px.pie(df, values='Monto', names='Tipo', hole=0.4)
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Aún no hay datos para mostrar gráficos.")
 
-# 4. HISTORIAL (Limpio, sin repetir encabezados)
-st.subheader("📋 Historial de Movimientos")
-if not df.empty:
-    # Mostramos los últimos 15 registros arriba
-    st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
-else:
-    st.write("El historial está vacío.")
+st.subheader("📋 Historial")
+st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
