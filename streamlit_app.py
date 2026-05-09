@@ -4,61 +4,61 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime
 
-# Configuración de la página para que se vea moderna
-st.set_page_config(page_title="Finanzas Rafael", page_icon="💰", layout="wide")
+st.set_page_config(page_title="Gastos Rafael", layout="wide")
 
-st.title("📊 Panel de Control de Gastos")
-st.markdown("---")
+st.title("💰 Control de Gastos Pro")
 
-# 1. Conexión con tu Excel
+# Conexión con tu link
+url_sheet = "https://docs.google.com/spreadsheets/d/1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs/edit?usp=sharing"
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# 2. Cargar datos
+# Cargar Datos
 try:
-    # Cambiá esta URL por la de tu Excel si es necesario
-    url = "https://docs.google.com/spreadsheets/d/1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs/edit?usp=sharing"
-    df = conn.read(spreadsheet=url, ttl=0)
-except Exception:
+    df = conn.read(spreadsheet=url_sheet, ttl=0)
+except:
     df = pd.DataFrame(columns=['Fecha', 'Tipo', 'Detalle', 'Monto', 'Moneda'])
 
-# --- DISEÑO DE COLUMNAS ---
-col_form, col_graf = st.columns([1, 2])
+col_f, col_g = st.columns([1, 2])
 
-with col_form:
-    st.subheader("📝 Nuevo Registro")
-    with st.container(border=True): # Borde redondeado para el formulario
+with col_f:
+    st.subheader("📝 Registrar")
+    with st.container(border=True):
         fecha = st.date_input("Fecha", datetime.now())
-        tipo = st.selectbox("Categoría", ["Gasto", "Ahorro", "Deuda"])
-        detalle = st.text_input("Detalle (ej: Papa)")
-        monto = st.number_input("Monto", min_value=0.0, step=100.0)
+        tipo = st.selectbox("Tipo", ["Gasto", "Ahorro", "Deuda"])
+        detalle = st.text_input("Detalle")
+        monto = st.number_input("Monto", min_value=0.0)
         moneda = st.selectbox("Moneda", ["ARS", "USD"])
         
-        btn_guardar = st.button("🚀 Guardar Registro", use_container_width=True)
+        if st.button("🚀 GUARDAR AHORA", use_container_width=True):
+            if detalle and monto > 0:
+                nueva_fila = pd.DataFrame([{
+                    'Fecha': fecha.strftime('%d/%m/%Y'),
+                    'Tipo': tipo,
+                    'Detalle': detalle,
+                    'Monto': monto,
+                    'Moneda': moneda
+                }])
+                df_final = pd.concat([df, nueva_fila], ignore_index=True)
+                
+                try:
+                    # INTENTO DE GUARDADO DIRECTO
+                    conn.update(spreadsheet=url_sheet, data=df_final)
+                    st.success("¡GUARDADO EN EXCEL!")
+                    st.balloons()
+                except:
+                    # SI FALLA EL PERMISO, AVISAMOS PERO MOSTRAMOS LOS DATOS
+                    st.warning("Google bloqueó el guardado directo por seguridad.")
+                    st.info("Usá tu Formulario de Google para que se guarde automático sin errores.")
+                    st.code(f"{detalle} - {monto} {moneda}")
+            else:
+                st.error("Faltan datos")
 
-    if btn_guardar:
-        if detalle and monto > 0:
-            # Aquí mostramos el éxito y los datos
-            st.success("¡Datos procesados!")
-            st.balloons()
-            # Mostramos el código para pegar si el permiso de escritura falla
-            st.info("Copia esto a tu Excel si el guardado automático falla:")
-            st.code(f"{fecha.strftime('%d/%m/%Y')}, {tipo}, {detalle}, {monto}, {moneda}")
-        else:
-            st.warning("Completá todos los campos.")
-
-with col_graf:
-    st.subheader("📈 Análisis Visual")
+with col_g:
+    st.subheader("📊 Gráfico de Gastos")
     if not df.empty:
-        # Gráfico de Torta interactivo
-        fig = px.pie(df, values='Monto', names='Tipo', 
-                     title="Distribución de Gastos",
-                     hole=0.4,
-                     color_discrete_sequence=px.colors.qualitative.Safe)
+        fig = px.pie(df, values='Monto', names='Tipo', hole=0.4)
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Agregá datos para ver los gráficos.")
 
-# --- TABLA INFERIOR ---
-st.markdown("---")
-st.subheader("📋 Últimos movimientos")
+st.subheader("📋 Historial")
+st.dataframe(df.tail(10), use_container_width=True)
 st.dataframe(df, use_container_width=True)
