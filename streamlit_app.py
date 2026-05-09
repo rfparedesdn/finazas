@@ -24,7 +24,7 @@ creds_dict = {
     "client_email": "gastos-bot@capable-alcove-427523-u2.iam.gserviceaccount.com",
     "client_id": "111847215780906508573",
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.google.com/token",
+    "token_uri": "https://oauth2.googleapis.com/token", # Agregamos 'apis' después de google
 }
 
 try:
