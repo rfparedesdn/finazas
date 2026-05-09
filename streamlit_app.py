@@ -1,72 +1,40 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
-import plotly.express as px
-from datetime import datetime
+from google.oauth2.service_account import Credentials
+import gspread
 
-st.set_page_config(page_title="Gastos Rafael", layout="wide")
+# Configuración de credenciales directa
+info = {
+    "type": "service_account",
+    "project_id": "capable-alcove-427523-u2",
+    "private_key_id": "78e3a250f0c20b6a409b10076992ba6b86e4f5ed",
+    "private_key": """-----BEGIN PRIVATE KEY-----
+AQUÍ_PEGÁ_TU_LLAVE_MII_QUE_TENÉS_EN_EL_JSON
+-----END PRIVATE KEY-----""",
+    "client_email": "gastos-bot@capable-alcove-427523-u2.iam.gserviceaccount.com",
+    "client_id": "111847215780906508573",
+    "token_uri": "https://oauth2.google.com/token",
+}
 
-st.title("💰 Mi Control de Finanzas")
+scope = ["https://www.googleapis.com/auth/spreadsheets"]
 
-# 1. INTENTO DE CONEXIÓN
 try:
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    
-    # URL de tu Excel
-    URL_EXCEL = "https://docs.google.com/spreadsheets/d/1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs/edit?usp=sharing"
-
-    # Intentar leer
-    df = conn.read(spreadsheet=URL_EXCEL, ttl=0)
-    df = df.dropna(how='all')
-    st.success("✅ ¡Conexión exitosa con el Excel!")
-
+    creds = Credentials.from_service_account_info(info, scopes=scope)
+    client = gspread.authorize(creds)
+    # Este es el ID de tu Google Sheet
+    sheet = client.open_by_key("1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs").sheet1
+    st.success("¡Conexión establecida!")
 except Exception as e:
-    st.error("❌ Error de Conexión")
-    with st.expander("Ver detalle técnico del error"):
-        st.write(e)
-    
-    st.info("💡 Si ya compartiste el archivo, revisá que en 'Secrets' de Streamlit hayas pegado la llave JSON correctamente.")
-    df = pd.DataFrame(columns=['Fecha', 'Tipo', 'Detalle', 'Monto', 'Moneda'])
+    st.error(f"Error: {e}")
 
-# --- RESTO DE LA INTERFAZ ---
-col_form, col_graf = st.columns([1, 2])
+st.title("Prueba de Gastos")
+detalle = st.text_input("Detalle")
+monto = st.number_input("Monto", min_value=0)
 
-with col_form:
-    st.subheader("📝 Nuevo Registro")
-    with st.container(border=True):
-        fecha = st.date_input("Fecha", datetime.now())
-        tipo = st.selectbox("Categoría", ["Gasto", "Ahorro", "Deuda", "Inversión"])
-        detalle = st.text_input("¿En qué se usó?")
-        monto = st.number_input("Monto", min_value=0.0, step=100.0)
-        moneda = st.selectbox("Moneda", ["ARS", "USD"])
-        
-        if st.button("🚀 GUARDAR AHORA", use_container_width=True):
-            if detalle and monto > 0:
-                nueva_fila = pd.DataFrame([{
-                    'Fecha': fecha.strftime('%d/%m/%Y'),
-                    'Tipo': tipo,
-                    'Detalle': detalle,
-                    'Monto': monto,
-                    'Moneda': moneda
-                }])
-                
-                df_actualizado = pd.concat([df, nueva_fila], ignore_index=True)
-                
-                try:
-                    conn.update(spreadsheet=URL_EXCEL, data=df_actualizado)
-                    st.success("¡Guardado correctamente!")
-                    st.balloons()
-                    st.rerun()
-                except Exception as ex:
-                    st.error(f"No se pudo guardar: {ex}")
-            else:
-                st.warning("Completa los datos.")
-
-with col_graf:
-    st.subheader("📊 Resumen")
-    if not df.empty:
-        fig = px.pie(df, values='Monto', names='Tipo', hole=0.4)
-        st.plotly_chart(fig, use_container_width=True)
-
-st.subheader("📋 Historial")
-st.dataframe(df.iloc[::-1], use_container_width=True, hide_index=True)
+if st.button("Guardar"):
+    try:
+        sheet.append_row([detalle, monto])
+        st.success("¡Guardado en el Excel!")
+        st.balloons()
+    except Exception as e:
+        st.error(f"No pude escribir en el Excel: {e}")
