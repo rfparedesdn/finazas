@@ -46,7 +46,8 @@ try:
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     creds = Credentials.from_service_account_info(info, scopes=scope)
     client = gspread.authorize(creds)
-    sheet = client.open_by_key("1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs").sheet1
+    spreadsheet = client.open_by_key("1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs")
+    sheet = spreadsheet.get_worksheet(0)
 
     st.title("💰 Control de Gastos BA")
     
