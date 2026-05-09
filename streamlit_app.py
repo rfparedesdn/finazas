@@ -48,13 +48,24 @@ else:
 monto = st.sidebar.number_input(f"Monto en {moneda}", min_value=0.0, step=10.0)
 
 if st.sidebar.button("💾 Guardar en Google Sheets"):
-    nueva_fila = pd.DataFrame([{
-        'Fecha': datetime.now().strftime("%d/%m/%Y %H:%M"),
-        'Tipo': tipo_registro,
-        'Categoría/Detalle': detalle,
-        'Monto': monto,
-        'Moneda': moneda
-    }])
+        try:
+            nueva_fila = pd.DataFrame([{
+                'Fecha': datetime.now().strftime('%d/%m/%Y %H:%M'),
+                'Tipo': tipo_registro,
+                'Categoría/Detalle': detalle,
+                'Monto': monto,
+                'Moneda': moneda
+            }])
+            
+            # Combinar y guardar
+            df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
+            url_directa = st.secrets["connections"]["gsheets"]["spreadsheet"]
+            conn.update(spreadsheet=url_directa, data=df_actualizado)
+            
+            st.sidebar.success("¡Guardado correctamente!")
+            st.balloons()
+        except Exception as e:
+            st.sidebar.error("Error de permisos. Verificá que el Excel sea público como Editor.")
     
  # Combinar con datos viejos y guardar
     df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
