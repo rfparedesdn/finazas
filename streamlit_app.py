@@ -9,7 +9,16 @@ st.set_page_config(page_title="Finanzas Rafa", layout="wide")
 st.title("📊 Mi Control de Finanzas (ARS/USD)")
 
 # --- CONEXIÓN A GOOGLE SHEETS ---
+# Usamos el link directo para que sea más fácil
+url = st.secrets["connections"]["gsheets"]["spreadsheet"]
 conn = st.connection("gsheets", type=GSheetsConnection)
+
+# Leer datos existentes de la hoja
+try:
+    df_existente = conn.read(spreadsheet=url, ttl=0)
+except Exception as e:
+    st.error(f"Error al leer la hoja: {e}")
+    df_existente = pd.DataFrame(columns=['Fecha', 'Tipo', 'Categoría/Detalle', 'Monto', 'Moneda'])
 
 # Leer datos existentes de la hoja
 try:
