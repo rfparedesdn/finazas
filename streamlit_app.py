@@ -58,9 +58,9 @@ if st.sidebar.button("💾 Guardar en Google Sheets"):
             }])
             
             # Combinar y guardar
-            df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
-            url_directa = st.secrets["connections"]["gsheets"]["spreadsheet"]
-            conn.update(spreadsheet=url_directa, data=df_actualizado)
+              df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
+              url_directa = st.secrets["connections"]["gsheets"]["spreadsheet"]
+              conn.update(spreadsheet=url_directa, data=df_actualizado)
             
             st.sidebar.success("¡Guardado correctamente!")
             st.balloons()
