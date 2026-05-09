@@ -56,22 +56,16 @@ if st.sidebar.button("💾 Guardar en Google Sheets"):
                 'Monto': monto,
                 'Moneda': moneda
             }])
+            # ESTA LÍNEA DEBE TENER EL MISMO ESPACIO QUE 'nueva_fila'
+            df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
             
-            # Combinar y guardar
-                 df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
-                 url_directa = st.secrets["connections"]["gsheets"]["spreadsheet"]
-                 conn.update(spreadsheet=url_directa, data=df_actualizado)
+            url_directa = st.secrets["connections"]["gsheets"]["spreadsheet"]
+            conn.update(spreadsheet=url_directa, data=df_actualizado)
             
             st.sidebar.success("¡Guardado correctamente!")
             st.balloons()
         except Exception as e:
-            st.sidebar.error("Error de permisos. Verificá que el Excel sea público como Editor.")
-    
- # Combinar con datos viejos y guardar
-    df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
-    url = st.secrets["connections"]["gsheets"]["spreadsheet"]
-    conn.update(spreadsheet=url, data=df_actualizado)
-    st.sidebar.success("¡Guardado correctamente!")
+            st.sidebar.error(f"Error: {e}")
 
 # --- CUERPO PRINCIPAL ---
 tab1, tab2, tab3 = st.tabs(["💰 Ahorros", "📉 Gastos", "💸 Deudas"])
