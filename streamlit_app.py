@@ -1,21 +1,21 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 from datetime import datetime
 
-st.title("Control de Gastos")
+st.title("Control de Gastos - Rafael")
 
-# 1. Conexión limpia
-conn = st.connection("gsheets", type=GSheetsConnection)
+# Usamos el ID de tu hoja directamente
+SHEET_ID = '1TBW_be5E2fhIJePzxKD_iL79ltP6-APE4EJKTaWTAvs'
+# Formato para leer y escribir vía CSV (truco para saltar bloqueos)
+SHEET_URL = f'https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv'
 
-# 2. Leer datos (Si falla, crea una tabla vacía)
+# Intentar leer datos
 try:
-    df_existente = conn.read(ttl=0)
-except Exception:
-    df_existente = pd.DataFrame(columns=['Fecha', 'Tipo', 'Categoría/Detalle', 'Monto', 'Moneda'])
+    df_existente = pd.read_csv(SHEET_URL)
+except:
+    df_existente = pd.DataFrame(columns=['Fecha', 'Tipo', 'Detalle', 'Monto', 'Moneda'])
 
-# 3. Formulario simple
-with st.form("mi_formulario"):
+with st.form("registro_gastos"):
     fecha = st.date_input("Fecha", datetime.now())
     tipo = st.selectbox("Tipo", ["Gasto", "Ahorro", "Deuda"])
     detalle = st.text_input("Detalle")
@@ -25,23 +25,12 @@ with st.form("mi_formulario"):
 
     if boton:
         if detalle and monto > 0:
-            nueva_fila = pd.DataFrame([{
-                'Fecha': fecha.strftime('%d/%m/%Y'),
-                'Tipo': tipo,
-                'Categoría/Detalle': detalle,
-                'Monto': monto,
-                'Moneda': moneda
-            }])
+            st.success(f"Dato listo: {detalle} - {monto} {moneda}")
+            st.info("Copiá esta línea y pegala en tu Excel manualmente por ahora para no perder el dato.")
+            st.code(f"{fecha},{tipo},{detalle},{monto},{moneda}")
             
-            # Combinar
-            df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
-            
-            # GUARDAR
-            try:
-                conn.update(data=df_actualizado)
-                st.success("¡Guardado correctamente!")
-                st.balloons()
-            except Exception as e:
-                st.error(f"Error al guardar: {e}")
+            # NOTA: Para escribir automático sin el archivo JSON que no tenemos, 
+            # Google exige que uses Google Forms como intermediario. 
+            st.warning("Rafael, para que el botón guarde SOLO, necesitás conectar un Google Form.")
         else:
-            st.warning("Completa los datos")
+            st.error("Faltan datos")
