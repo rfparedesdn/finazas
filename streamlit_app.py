@@ -15,9 +15,14 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 # Leer datos existentes de la hoja
 try:
-    df_existente = conn.read(spreadsheet=url, ttl=0)
-except Exception as e:
-    st.error(f"Error al leer la hoja: {e}")
+    # Intentamos leer la hoja
+    df_existente = conn.read(spreadsheet=st.secrets["connections"]["gsheets"]["spreadsheet"], ttl=0)
+    
+    # Si la hoja está totalmente vacía, forzamos los títulos
+    if df_existente.empty or len(df_existente.columns) < 5:
+        df_existente = pd.DataFrame(columns=['Fecha', 'Tipo', 'Categoría/Detalle', 'Monto', 'Moneda'])
+except Exception:
+    # Si hay error de conexión, creamos la tabla vacía para que no se cierre la app
     df_existente = pd.DataFrame(columns=['Fecha', 'Tipo', 'Categoría/Detalle', 'Monto', 'Moneda'])
 
 # Leer datos existentes de la hoja
