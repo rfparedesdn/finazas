@@ -49,6 +49,7 @@ monto = st.sidebar.number_input(f"Monto en {moneda}", min_value=0.0, step=10.0)
 
 if st.sidebar.button("💾 Guardar en Google Sheets"):
         try:
+            # 1. Crear el dato nuevo
             nueva_fila = pd.DataFrame([{
                 'Fecha': datetime.now().strftime('%d/%m/%Y %H:%M'),
                 'Tipo': tipo_registro,
@@ -56,16 +57,19 @@ if st.sidebar.button("💾 Guardar en Google Sheets"):
                 'Monto': monto,
                 'Moneda': moneda
             }])
-            # ESTA LÍNEA DEBE TENER EL MISMO ESPACIO QUE 'nueva_fila'
+            
+            # 2. Leer y combinar (usando la conexión establecida)
             df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
             
-            url_directa = st.secrets["connections"]["gsheets"]["spreadsheet"]
-            conn.update(spreadsheet=url_directa, data=df_actualizado)
+            # 3. GUARDAR
+            conn.update(data=df_actualizado)
             
-            st.sidebar.success("¡Guardado correctamente!")
+            st.sidebar.success("¡Guardado correctamente en Google Sheets!")
             st.balloons()
+            st.rerun() # Esto limpia el formulario después de guardar
         except Exception as e:
-            st.sidebar.error(f"Error: {e}")
+            st.sidebar.error("Todavía no tenemos permiso de escritura.")
+            st.sidebar.info("¿Agregaste a 'connect-gsheets@streamlit.io' como Editor en tu Excel?")
 
 # --- CUERPO PRINCIPAL ---
 tab1, tab2, tab3 = st.tabs(["💰 Ahorros", "📉 Gastos", "💸 Deudas"])
