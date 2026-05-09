@@ -70,7 +70,6 @@ if st.sidebar.button("💾 Guardar en Google Sheets"):
         except Exception as e:
             st.sidebar.error("Todavía no tenemos permiso de escritura.")
             st.sidebar.info("¿Agregaste a 'connect-gsheets@streamlit.io' como Editor en tu Excel?")
-
 # --- CUERPO PRINCIPAL ---
 tab1, tab2, tab3 = st.tabs(["💰 Ahorros", "📉 Gastos", "💸 Deudas"])
 
